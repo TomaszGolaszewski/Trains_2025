@@ -1,3 +1,7 @@
+# Python Game Engine
+# By Tomasz Golaszewski
+# under development since 2022
+
 import pygame
 
 from game_engine.definitions import *

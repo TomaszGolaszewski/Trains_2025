@@ -1,41 +1,10 @@
 import pygame
 
 from settings import *
+from game_engine.scenes import *
 from game_engine.scenes_features import *
 from classes_map import *
 from classes_trains import *
-
-
-class SceneBase:
-    def __init__(self):
-        """Initialization of the scene."""
-        self.next = self
-    
-    def process_input(self, events, keys_pressed):
-        """
-        Receive all the events that happened since the last frame.
-        Handle all received events.
-        """
-        print("not overwritten process_input")
-
-    def update(self):
-        """Game logic for the scene."""
-        print("not overwritten update")
-
-    def render(self, win):
-        """Draw scene on the screen."""
-        print("not overwritten render")
-
-    def switch_scene(self, next_scene):
-        """Change scene."""
-        self.next = next_scene
-    
-    def terminate(self):
-        """Close the game by changing scene to None."""
-        self.switch_scene(None)
-
-
-# ======================================================================
 
 
 class TitleScene(SceneBase):
@@ -56,7 +25,6 @@ class TitleScene(SceneBase):
         Receive all the events that happened since the last frame.
         Handle all received events.
         """
-        pass
         for event in events:
             # keys that can be pressed only ones
             if event.type == pygame.KEYDOWN:
