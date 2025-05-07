@@ -1,7 +1,7 @@
 import pygame
 
 from settings import *
-from classes_scenes_features import *
+from game_engine.scenes_features import *
 from classes_map import *
 from classes_trains import *
 
@@ -42,9 +42,9 @@ class TitleScene(SceneBase):
     def __init__(self):
         """Initialization of the scene."""
         SceneBase.__init__(self)
-        self.title = FixText((WIN_WIDTH/2, WIN_HEIGHT/2 - 30), "TRAINS 2024", 70)
-        self.subtitle = FixText((WIN_WIDTH/2, WIN_HEIGHT/2 + 20), "Offline Demo", 40)
-        # self.start_button = AdvancedButton((WIN_WIDTH/2, WIN_HEIGHT/2 + 100), "[Prepare Game]", 30, color=GRAY)
+        self.title = FixText((WIN_WIDTH/2, WIN_HEIGHT/2 - 30), "TRAINS 2025", 70)
+        self.subtitle = FixText((WIN_WIDTH/2, WIN_HEIGHT/2 + 20), "Train World", 40)
+        self.start_button = AdvancedButton((WIN_WIDTH/2, WIN_HEIGHT/2 + 100), "[Prepare Game]", 30, color=GRAY)
         self.quick_start_button = AdvancedButton((WIN_WIDTH/2, WIN_HEIGHT/2 + 150), "[Quick Start]", 30, color=GRAY)
         self.exit_button = AdvancedButton((WIN_WIDTH/2, WIN_HEIGHT/2 + 200), "[Exit]", 30, color=GRAY)
         self.seconds_since_start = 0
@@ -60,9 +60,9 @@ class TitleScene(SceneBase):
         for event in events:
             # keys that can be pressed only ones
             if event.type == pygame.KEYDOWN:
-        #         # move to the next scene
-        #         if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
-        #             self.switch_scene(ChooseMapScene())
+                # move to the next scene
+                if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                    self.switch_scene(LoadingScene())
                 # quick start
                 if event.key == pygame.K_q:
                     self.switch_scene(LoadingScene())
@@ -73,8 +73,8 @@ class TitleScene(SceneBase):
                         and event.button in [1,2,3]: # 1 - left; 2 - middle; 3 - right click
                 mouse_coord = pygame.mouse.get_pos()
                 # move to the next scene
-                # if self.start_button.is_inside(mouse_coord):
-                #     self.switch_scene(ChooseMapScene())
+                if self.start_button.is_inside(mouse_coord):
+                    self.switch_scene(LoadingScene())
                 # quick start
                 if self.quick_start_button.is_inside(mouse_coord):
                     self.switch_scene(LoadingScene())
@@ -87,7 +87,7 @@ class TitleScene(SceneBase):
 
         # check hovering of the mouse
         mouse_coord = pygame.mouse.get_pos()
-        # self.start_button.check_hovering(mouse_coord)
+        self.start_button.check_hovering(mouse_coord)
         self.quick_start_button.check_hovering(mouse_coord)
         self.exit_button.check_hovering(mouse_coord)
 
@@ -106,7 +106,7 @@ class TitleScene(SceneBase):
         self.title.draw(win)
         self.subtitle.draw(win)
         if self.seconds_since_start > self.buttons_delay:
-            # self.start_button.draw(win)
+            self.start_button.draw(win)
             self.quick_start_button.draw(win)
             self.exit_button.draw(win)
 

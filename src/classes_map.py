@@ -3,8 +3,8 @@ import math
 import random
 
 from settings import *
-from global_variables import *
-from functions_math import *
+from game_engine.definitions import *
+from game_engine.functions_math import *
 
 class Tile:
     def __init__(self, id, coord_id, coord_world, list_with_tracks=None, type="grass"):

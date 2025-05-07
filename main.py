@@ -22,7 +22,7 @@ else:
 from settings import *
 from global_variables import *
 from classes_scenes import *
-from classes_scenes_features import *
+from game_engine.scenes_features import *
 
 
 def run():

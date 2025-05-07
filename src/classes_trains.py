@@ -3,8 +3,8 @@ import math
 import random
 
 # from settings import *
-from global_variables import *
-from functions_math import *
+from game_engine.definitions import *
+from game_engine.functions_math import *
 
 class Train:
     def __init__(self, map, id: int, tile_id: int, last_tile_id: int):

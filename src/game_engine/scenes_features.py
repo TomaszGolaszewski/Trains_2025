@@ -1,6 +1,6 @@
 import pygame
 
-from global_variables import *
+from game_engine.definitions import *
 
 
 class FixText:
