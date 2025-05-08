@@ -25,7 +25,7 @@ class Tile:
         """Draw the Tile on the screen."""
         coord_screen = world2screen(self.coord_world, offset_x, offset_y, scale) 
         # draw background
-        pygame.draw.circle(win, self.color, coord_screen, 50*scale)
+        pygame.draw.circle(win, self.color, coord_screen, 5*scale)
         # draw label
         if scale >= 0.5:
             text_obj = self.font_obj.render(f"{self.id}", True, self.color, BLACK) # {self.coord_id} {self.list_with_tracks}
@@ -55,6 +55,19 @@ class Tile:
         elif type == "shallow": 
             self.color = [SHALLOW[0]- 4 * depth, SHALLOW[1] - 8 * depth, SHALLOW[2] - 8 * depth]        
         else: self.color = RED
+
+
+class StationTile(Tile):
+    def draw(self, win, offset_x: int, offset_y: int, scale: float):
+        """Draw the Tile on the screen."""
+        coord_screen = world2screen(self.coord_world, offset_x, offset_y, scale) 
+        # draw background
+        pygame.draw.circle(win, GRAY, coord_screen, 50*scale)
+        # draw label
+        if scale >= 0.5:
+            text_obj = self.font_obj.render(f"{self.id}", True, self.color, BLACK) # {self.coord_id} {self.list_with_tracks}
+            win.blit(text_obj, coord_screen)
+
 
 # ======================================================================
 
@@ -99,6 +112,11 @@ class Map:
                 self.dict_with_tiles[self.lowest_free_id] = Tile(self.lowest_free_id, (x, y), self.id2world((x, y)))
                 self.lowest_free_id += 1
 
+        self.create_station((-10, -20), 0)
+        self.create_station((-30, -20), 180)
+        # self.create_station((-10, -40), 60)
+        # self.create_station((-30, -40), 240)
+
     def draw(self, win, offset_x: int, offset_y: int, scale):
         """Draw the Map on the screen."""
         for tile_id in self.dict_with_tiles:
@@ -108,7 +126,16 @@ class Map:
             coord_screen = world2screen(tile.coord_world, offset_x, offset_y, scale)
             for neighbor_tile_id in tile.list_with_tracks:
                 neighbor_coord_screen = world2screen(self.dict_with_tiles[neighbor_tile_id].coord_world, offset_x, offset_y, scale)
-                pygame.draw.line(win, RED, coord_screen, neighbor_coord_screen, int(12*scale))
+                pygame.draw.line(win, WHITE, coord_screen, neighbor_coord_screen, 1) # int(12*scale)) # , RED
+
+    def draw_grid(self, win, offset_x: int, offset_y: int, scale):
+        """Draw grid of the Map on the screen."""
+        tile_top_left_coord_id = self.world2id(screen2world((0, 0), offset_x, offset_y, scale))
+        tile_bottom_right_coord_id = self.world2id(screen2world((WIN_WIDTH, WIN_HEIGHT), offset_x, offset_y, scale))
+        for x_id in range(tile_top_left_coord_id[0], tile_bottom_right_coord_id[0] + 1):
+            for y_id in range(tile_top_left_coord_id[1], tile_bottom_right_coord_id[1] + 1):
+                coord_screen = world2screen(self.id2world((x_id, y_id)), offset_x, offset_y, scale) 
+                pygame.draw.circle(win, WHITE, coord_screen, 50*scale, 1)
 
     def add_tile(self, coord_id: tuple[int, int], terrain: str) -> int:
         """Add new tile. If the tile exists, change its type.
@@ -271,4 +298,20 @@ class Map:
         for train_id in dict_with_trains:
             dict_with_trains[train_id].find_movement_whole_path(self)
             dict_with_trains[train_id].find_movement_free_path(self, dict_with_trains, dict_with_reservations)
-            
+
+    def create_station(self, origin_coord_id: tuple[int, int], angle: int = 0, number_of_tracks: int = 4, number_of_tiles: int = 10):
+        """Create tiles with station.
+        angle can only be selected from the list: [0, 60, 120, 180, 240, 300]
+        """
+        terrain = "grass"
+        for track in range(number_of_tracks):
+            for tile in range(number_of_tiles):
+                if angle:
+                    coord_id = (origin_coord_id[0] - tile, origin_coord_id[1] - track)
+                else:
+                    coord_id = (origin_coord_id[0] + tile, origin_coord_id[1] + track)
+                # coord_id = (origin_coord_id[0] + tile//2 - track, origin_coord_id[1] + track + tile)
+                self.dict_with_tiles[self.lowest_free_id] = StationTile(self.lowest_free_id, coord_id, self.id2world(coord_id), [], terrain)
+                self.lowest_free_id += 1
+                terrain = "concrete"
+

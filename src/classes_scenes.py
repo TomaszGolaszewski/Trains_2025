@@ -315,7 +315,7 @@ class GameScene(SceneBase):
         # adding entities
         if self.left_mouse_button_down and (not current_tile_id or self.last_used_tile != current_tile_id):
             # add new tile
-            if self.current_mode == "terrain":
+            if self.current_mode == "terrain" or (self.current_mode =="tracks" and not current_tile_id):
                 current_tile_id = self.map.add_tile(coord_id, self.current_terrain)
             # add new track
             if self.current_mode == "tracks" and self.last_used_tile and current_tile_id:
@@ -391,6 +391,8 @@ class GameScene(SceneBase):
 
         # draw the map
         self.map.draw(win, self.offset_horizontal, self.offset_vertical, self.scale)
+        if self.current_mode == "tracks" and self.scale >= 0.25:
+            self.map.draw_grid(win, self.offset_horizontal, self.offset_vertical, self.scale)
 
         # draw trains
         for train_id in self.dict_with_trains:
