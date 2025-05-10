@@ -5,10 +5,17 @@ Railway traffic control simulator.
 **Project still under development**
 
 
+## About
+
 ### Current stage:
 v0.2 - Map stage I
 
 ### Last changes:
+v0.2.1 - 10.05.2025
+
+* Added automatic station creation;
+* Added restrictions to track creation and deletion.
+
 v0.2.0 - 08.05.2025
 
 * Added station tile;
@@ -18,7 +25,3 @@ v0.2.0 - 08.05.2025
 v0.1.2 - 07.05.2025
 
 * More code cleaning and refactoring.
-
-v0.1.1 - 07.05.2025
-
-* Code cleaning and refactoring.

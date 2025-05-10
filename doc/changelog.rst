@@ -1,6 +1,11 @@
 Changelog
 ======
 
+v0.2.1 - 10.05.2025
+------
+* Added automatic station creation;
+* Added restrictions to track creation and deletion.
+
 v0.2.0 - 08.05.2025
 ------
 * Added station tile;

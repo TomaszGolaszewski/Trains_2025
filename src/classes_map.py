@@ -7,7 +7,7 @@ from game_engine.definitions import *
 from game_engine.functions_math import *
 
 class Tile:
-    def __init__(self, id, coord_id, coord_world, list_with_tracks=None, type="grass"):
+    def __init__(self, id, coord_id, coord_world, list_with_tracks=None, type="grass", device="rail"):
         """Initialization of the tile."""
         self.id = id
         self.coord_id = coord_id
@@ -15,8 +15,13 @@ class Tile:
         self.tile_type = type
         self.set_type(type)
 
-        if list_with_tracks is None: self.list_with_tracks = []
-        else: self.list_with_tracks = list_with_tracks
+        if list_with_tracks is None: 
+            self.list_with_tracks = []
+        else: 
+            self.list_with_tracks = list_with_tracks
+        
+        self.device = device
+        self.check_rail_type()
 
         # labels
         self.font_obj = pygame.font.SysFont("arial", 20)
@@ -25,10 +30,10 @@ class Tile:
         """Draw the Tile on the screen."""
         coord_screen = world2screen(self.coord_world, offset_x, offset_y, scale) 
         # draw background
-        pygame.draw.circle(win, self.color, coord_screen, 5*scale)
+        pygame.draw.circle(win, self.color, coord_screen, 20*scale) # 50
         # draw label
         if scale >= 0.5:
-            text_obj = self.font_obj.render(f"{self.id}", True, self.color, BLACK) # {self.coord_id} {self.list_with_tracks}
+            text_obj = self.font_obj.render(f"{self.id}-{self.list_with_tracks}", True, self.color, BLACK) # {self.coord_id} {self.list_with_tracks}
             win.blit(text_obj, coord_screen)
 
     def set_type(self, type, depth=0):
@@ -56,20 +61,35 @@ class Tile:
             self.color = [SHALLOW[0]- 4 * depth, SHALLOW[1] - 8 * depth, SHALLOW[2] - 8 * depth]        
         else: self.color = RED
 
+    def add_track(self, tile_id: int):
+        """Add rail and check tile purpose again."""
+        if tile_id not in self.list_with_tracks:
+            self.list_with_tracks.append(tile_id)
+            self.check_rail_type()
 
-class StationTile(Tile):
-    def draw(self, win, offset_x: int, offset_y: int, scale: float):
-        """Draw the Tile on the screen."""
-        coord_screen = world2screen(self.coord_world, offset_x, offset_y, scale) 
-        # draw background
-        pygame.draw.circle(win, GRAY, coord_screen, 50*scale)
-        # draw label
-        if scale >= 0.5:
-            text_obj = self.font_obj.render(f"{self.id}", True, self.color, BLACK) # {self.coord_id} {self.list_with_tracks}
-            win.blit(text_obj, coord_screen)
+    def remove_track(self, tile_id: int):
+        """Remove rail and check tile purpose again."""
+        if tile_id in self.list_with_tracks:
+            self.list_with_tracks.remove(tile_id)
+            self.check_rail_type()
+
+    def check_rail_type(self):
+        """Check rail type: None, station, rail, end, switch, semaphore, error."""
+        if self.device not in ["station", "semaphore"]:
+            if len(self.list_with_tracks) == 0:
+                self.rail_type = None
+            elif len(self.list_with_tracks) == 1:
+                self.rail_type = "end"
+            elif len(self.list_with_tracks) == 2:
+                self.rail_type = "rail"
+            elif len(self.list_with_tracks) == 3:
+                self.rail_type = "switch"
+            else:
+                self.rail_type = "error"
 
 
 # ======================================================================
+
 
 class Map:
     def __init__(self, tile_edge_length=60):
@@ -112,10 +132,12 @@ class Map:
                 self.dict_with_tiles[self.lowest_free_id] = Tile(self.lowest_free_id, (x, y), self.id2world((x, y)))
                 self.lowest_free_id += 1
 
-        self.create_station((-10, -20), 0)
-        self.create_station((-30, -20), 180)
+        # self.create_station((-10, -20), 0)
+        # self.create_station((-30, -20), 180)
         # self.create_station((-10, -40), 60)
         # self.create_station((-30, -40), 240)
+        for i in range(10):
+            self.create_station((-100 + 20*random.randint(0, 10), -5 - 10*random.randint(0, 10)), random.randint(0, 1))
 
     def draw(self, win, offset_x: int, offset_y: int, scale):
         """Draw the Map on the screen."""
@@ -126,6 +148,8 @@ class Map:
             coord_screen = world2screen(tile.coord_world, offset_x, offset_y, scale)
             for neighbor_tile_id in tile.list_with_tracks:
                 neighbor_coord_screen = world2screen(self.dict_with_tiles[neighbor_tile_id].coord_world, offset_x, offset_y, scale)
+                if self.dict_with_tiles[tile_id].device == "station" and self.dict_with_tiles[neighbor_tile_id].device == "station":
+                    pygame.draw.line(win, GRAY, coord_screen, neighbor_coord_screen, int(40*scale))
                 pygame.draw.line(win, WHITE, coord_screen, neighbor_coord_screen, 1) # int(12*scale)) # , RED
 
     def draw_grid(self, win, offset_x: int, offset_y: int, scale):
@@ -135,7 +159,7 @@ class Map:
         for x_id in range(tile_top_left_coord_id[0], tile_bottom_right_coord_id[0] + 1):
             for y_id in range(tile_top_left_coord_id[1], tile_bottom_right_coord_id[1] + 1):
                 coord_screen = world2screen(self.id2world((x_id, y_id)), offset_x, offset_y, scale) 
-                pygame.draw.circle(win, WHITE, coord_screen, 50*scale, 1)
+                pygame.draw.circle(win, WHITE, coord_screen, 10*scale, 1)
 
     def add_tile(self, coord_id: tuple[int, int], terrain: str) -> int:
         """Add new tile. If the tile exists, change its type.
@@ -154,25 +178,33 @@ class Map:
         # remove tracks
         for neighbor_tile_id in self.dict_with_tiles[tile_id].list_with_tracks:
             if tile_id in self.dict_with_tiles[neighbor_tile_id].list_with_tracks:
-                self.dict_with_tiles[neighbor_tile_id].list_with_tracks.remove(tile_id)
+                self.dict_with_tiles[neighbor_tile_id].remove_track(tile_id)
         # remove tile
         del self.dict_with_tiles[tile_id]
 
     def add_track(self, first_tile_id: int, second_tile_id: int):
         """Add new track (connection between tiles) by adding ids of connected 
-        tiles to lists of tracks of each track."""
-        if second_tile_id not in self.dict_with_tiles[first_tile_id].list_with_tracks:
-            self.dict_with_tiles[first_tile_id].list_with_tracks.append(second_tile_id)
-        if first_tile_id not in self.dict_with_tiles[second_tile_id].list_with_tracks:
-            self.dict_with_tiles[second_tile_id].list_with_tracks.append(first_tile_id)
+        tiles to lists of tracks of each track.
+
+        Each tile can only be connected to 3 other tiles (or 2 if it is station tile).
+        """
+        if ((self.dict_with_tiles[first_tile_id].device == "station" and len(self.dict_with_tiles[first_tile_id].list_with_tracks) < 2) \
+                or (self.dict_with_tiles[first_tile_id].device == "rail" and len(self.dict_with_tiles[first_tile_id].list_with_tracks) < 3)) \
+                and ((self.dict_with_tiles[second_tile_id].device == "station" and len(self.dict_with_tiles[second_tile_id].list_with_tracks) < 2) \
+                or (self.dict_with_tiles[second_tile_id].device == "rail" and len(self.dict_with_tiles[second_tile_id].list_with_tracks) < 3)) :
+            self.dict_with_tiles[first_tile_id].add_track(second_tile_id)
+            self.dict_with_tiles[second_tile_id].add_track(first_tile_id)
 
     def remove_track(self, first_tile_id: int, second_tile_id: int):
         """Remove track (connection between tiles) by removing ids of connected 
-        tiles from lists of tracks of each track."""
-        if second_tile_id in self.dict_with_tiles[first_tile_id].list_with_tracks:
-            self.dict_with_tiles[first_tile_id].list_with_tracks.remove(second_tile_id)
-        if first_tile_id in self.dict_with_tiles[second_tile_id].list_with_tracks:
-            self.dict_with_tiles[second_tile_id].list_with_tracks.remove(first_tile_id)
+        tiles from lists of tracks of each track.
+        
+        Track can not be removed from stations and semaphores.
+        """
+        if self.dict_with_tiles[first_tile_id].device not in ["station", "semaphore"] \
+                    and self.dict_with_tiles[second_tile_id].device not in ["station", "semaphore"]:
+            self.dict_with_tiles[first_tile_id].remove_track(second_tile_id)
+            self.dict_with_tiles[second_tile_id].remove_track(first_tile_id)
 
     def get_tile_by_coord_id(self, coord_id: tuple[int, int]) -> int:
         """Return ID of tile indicated by ordinal coordinates."""
@@ -301,17 +333,29 @@ class Map:
 
     def create_station(self, origin_coord_id: tuple[int, int], angle: int = 0, number_of_tracks: int = 4, number_of_tiles: int = 10):
         """Create tiles with station.
-        angle can only be selected from the list: [0, 60, 120, 180, 240, 300]
+        Angle can only be selected from the list: 0 - horizontal, 180 - upside down.
         """
-        terrain = "grass"
         for track in range(number_of_tracks):
-            for tile in range(number_of_tiles):
+            for tile in range(number_of_tiles + 4):
+                # tile coordinates
                 if angle:
                     coord_id = (origin_coord_id[0] - tile, origin_coord_id[1] - track)
                 else:
                     coord_id = (origin_coord_id[0] + tile, origin_coord_id[1] + track)
                 # coord_id = (origin_coord_id[0] + tile//2 - track, origin_coord_id[1] + track + tile)
-                self.dict_with_tiles[self.lowest_free_id] = StationTile(self.lowest_free_id, coord_id, self.id2world(coord_id), [], terrain)
+                # tile terrain and devaice of this tile
+                if tile in [0, 1, number_of_tiles+2, number_of_tiles+3]:
+                    device = "rail"
+                    terrain = "grass"
+                else:
+                    device = "station"
+                    terrain = "concrete"
+                # tile list_with_tracks
+                if tile == 0:
+                    tracks_list = [self.lowest_free_id + 1]
+                elif tile == number_of_tiles+3:
+                    tracks_list = [self.lowest_free_id - 1]
+                else:
+                    tracks_list = [self.lowest_free_id - 1, self.lowest_free_id + 1]
+                self.dict_with_tiles[self.lowest_free_id] = Tile(self.lowest_free_id, coord_id, self.id2world(coord_id), tracks_list, terrain, device)
                 self.lowest_free_id += 1
-                terrain = "concrete"
-
