@@ -87,6 +87,50 @@ class Tile:
             else:
                 self.rail_type = "error"
 
+    # ----- SEMAPHORES ----------------------------------
+
+    def draw_semaphore(self, win, offset_x: int, offset_y: int, scale):
+        """Draw semaphore on the screen."""
+        if self.device == "semaphore":
+            semaphore_radius = 20
+            if self.semaphore_light == "red":
+                color = RED
+            elif self.semaphore_light == "green":
+                color = GREEN
+            coord_screen = world2screen(self.coord_world, offset_x, offset_y, scale)
+            pygame.draw.circle(win, WHITE, move_point(coord_screen, -semaphore_radius*scale, math.radians(self.semaphore_angle)), semaphore_radius*scale, 1)
+            pygame.draw.circle(win, WHITE, coord_screen, semaphore_radius*scale, 1)
+            # top light
+            pygame.draw.circle(win, color, move_point(coord_screen, semaphore_radius*scale, math.radians(self.semaphore_angle)), semaphore_radius*scale)
+
+    def add_semaphore(self, angle: int = 60):
+        """Add semaphore.
+        Angle in radians.
+        """
+        if len(self.list_with_tracks) == 2:
+            self.device = "semaphore"
+            self.semaphore_angle = angle
+            self.semaphore_light = "red"
+
+    def remove_semphore(self):
+        """Remove semaphore."""
+        if self.device == "semaphore":
+            self.device = "rail"
+
+    def turn_semaphore(self):
+        """Turn semaphore 180deg."""
+        if self.device == "semaphore":
+            self.semaphore_angle += 180
+            if self.semaphore_angle > 360:
+                self.semaphore_angle -= 360
+
+    def switch_semaphore(self):
+        """Change light of the semaphore."""
+        if self.semaphore_light == "red":
+            self.semaphore_light = "green"
+        elif self.semaphore_light == "green":
+            self.semaphore_light = "red"
+
 
 # ======================================================================
 
@@ -136,8 +180,8 @@ class Map:
         # self.create_station((-30, -20), 180)
         # self.create_station((-10, -40), 60)
         # self.create_station((-30, -40), 240)
-        for i in range(10):
-            self.create_station((-100 + 20*random.randint(0, 10), -5 - 10*random.randint(0, 10)), random.randint(0, 1))
+        for i in range(5):
+            self.create_station((-50 + 10*random.randint(0, 10), -5 - 5*random.randint(0, 10)), 180*random.randint(0, 1))
 
     def draw(self, win, offset_x: int, offset_y: int, scale):
         """Draw the Map on the screen."""
@@ -151,6 +195,12 @@ class Map:
                 if self.dict_with_tiles[tile_id].device == "station" and self.dict_with_tiles[neighbor_tile_id].device == "station":
                     pygame.draw.line(win, GRAY, coord_screen, neighbor_coord_screen, int(40*scale))
                 pygame.draw.line(win, WHITE, coord_screen, neighbor_coord_screen, 1) # int(12*scale)) # , RED
+
+    def draw_semaphore(self, win, offset_x: int, offset_y: int, scale):
+        """Draw semaphore on the screen."""
+        for tile_id in self.dict_with_tiles:
+            tile = self.dict_with_tiles[tile_id]
+            tile.draw_semaphore(win, offset_x, offset_y, scale)
 
     def draw_grid(self, win, offset_x: int, offset_y: int, scale):
         """Draw grid of the Map on the screen."""
@@ -358,4 +408,39 @@ class Map:
                 else:
                     tracks_list = [self.lowest_free_id - 1, self.lowest_free_id + 1]
                 self.dict_with_tiles[self.lowest_free_id] = Tile(self.lowest_free_id, coord_id, self.id2world(coord_id), tracks_list, terrain, device)
+                # semaphores
+                if tile == 1:
+                    self.dict_with_tiles[self.lowest_free_id].add_semaphore(angle + 180)
+                if tile == number_of_tiles+2:
+                    self.dict_with_tiles[self.lowest_free_id].add_semaphore(angle)
                 self.lowest_free_id += 1
+
+    # ----- SEMAPHORES ----------------------------------
+
+    def manage_semaphore(self, tile_id: int):
+        """Manage semaphore.
+        If there is semafore - change light.
+        If there isn't - create new one.
+        """
+        if self.dict_with_tiles[tile_id].device == "semaphore":
+            self.dict_with_tiles[tile_id].turn_semaphore()
+        elif self.dict_with_tiles[tile_id].device == "rail" \
+                    and len(self.dict_with_tiles[tile_id].list_with_tracks) == 2:
+            
+            # calculate angle
+            first_neighbor_id = self.dict_with_tiles[tile_id].list_with_tracks[0]
+            second_neighbor_id = self.dict_with_tiles[tile_id].list_with_tracks[1]
+            first_neighbor_coord = self.dict_with_tiles[first_neighbor_id].coord_world
+            second_neighbor_coord = self.dict_with_tiles[second_neighbor_id].coord_world
+            angle = angle_to_target(first_neighbor_coord, second_neighbor_coord)
+            self.dict_with_tiles[tile_id].add_semaphore(int(math.degrees(angle)))
+
+    def remove_semaphore(self, tile_id: int):
+        """Remove semaphore."""
+        if self.dict_with_tiles[tile_id].device == "semaphore":
+            self.dict_with_tiles[tile_id].remove_semphore()
+
+    def switch_semaphore(self, tile_id: int):
+        """Change light of the semaphore."""
+        if self.dict_with_tiles[tile_id].device == "semaphore":
+            self.dict_with_tiles[tile_id].switch_semaphore()

@@ -121,10 +121,10 @@ class GameScene(SceneBase):
         self.current_frame = 0
 
         # create mode buttons
-        mode_list = ["none", "terrain", "tracks", "trains", "targets"]
+        mode_list = ["none", "terrain", "tracks", "semaphores", "trains", "targets"]
         self.list_with_mode_buttons = []
         for i, mode in enumerate(mode_list):
-            self.list_with_mode_buttons.append(AdvancedButton((WIN_WIDTH - 770 + 170*i, 40), "["+mode.capitalize()+"]", 30, color=GRAY, option=mode, width=150))
+            self.list_with_mode_buttons.append(AdvancedButton((WIN_WIDTH - 940 + 170*i, 40), "["+mode.capitalize()+"]", 30, color=GRAY, option=mode, width=150))
         # set first map as active as default
         self.list_with_mode_buttons[0].active = True
         self.current_mode = mode_list[0]
@@ -187,6 +187,12 @@ class GameScene(SceneBase):
                         for terrain_button in self.list_with_terrain_buttons:
                             if terrain_button.check_pressing(mouse_pos):
                                 self.current_terrain = terrain_button.option
+                    # semaphores
+                    if self.current_mode == "none" and not button_was_pressed and current_tile_id:
+                        self.map.switch_semaphore(current_tile_id)
+                    if self.current_mode == "semaphores" and not button_was_pressed and current_tile_id:
+                        self.map.manage_semaphore(current_tile_id)
+                        self.map.calculate_trains_path(self.dict_with_trains)
                     # choose train
                     for i, train_id in enumerate(self.dict_with_trains):
                         if self.dict_with_trains[train_id].is_button_pressed(mouse_pos, i):
@@ -212,6 +218,10 @@ class GameScene(SceneBase):
 
                 # 3 - right click
                 if event.button == 3:
+                    # semaphores
+                    if self.current_mode == "semaphores" and current_tile_id:
+                        self.map.remove_semaphore(current_tile_id)
+                        self.map.calculate_trains_path(self.dict_with_trains)
                     # remove targets
                     if self.current_mode == "targets":
                         if self.current_selected_train_id in self.dict_with_trains and \
@@ -402,6 +412,9 @@ class GameScene(SceneBase):
             if train_id == self.current_selected_train_id:
                 self.dict_with_trains[train_id].draw_button_selection(win, i)
 
+        # draw top layer of the map
+        self.map.draw_semaphore(win, self.offset_horizontal, self.offset_vertical, self.scale)
+        
         # draw buttons
         for mode_button in self.list_with_mode_buttons:
             mode_button.draw(win)

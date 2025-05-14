@@ -1,6 +1,10 @@
 Changelog
 ======
 
+v0.2.2 - 14.05.2025
+------
+* Added semaphores.
+
 v0.2.1 - 10.05.2025
 ------
 * Added automatic station creation;
